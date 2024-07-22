@@ -18,34 +18,33 @@ let prevName="xyz";
 const dbSave=async (req,res)=>{
     let {customer_name,dob,income}=req.body;
     if(!customer_name||!dob||!income){
-        res.status(402).json({
+        return res.status(402).json({
             message:"all the fields are required"
         })
     }
     const age=calculateAge(dob);
     if(age<15){
-        throw new Error({
-            message:"underage"
-        })
-        // res.status(404).json({message:"age less than 15"})
+        // throw new Error({
+        //     message:"underage"
+        // })
+        return res.status(404).json({message:"age less than 15"})
     }
     const currentTime=Date.now();
-    console.log(currentTime-prevTime)
+    // console.log(currentTime-prevTime)
     if(customer_name===prevName){
         if(currentTime-prevTime<120000){
-            throw new Error({
-                message:"maximum limit exceeded"
-            })
+            // throw new Error({
+            //     message:"maximum limit exceeded"
+            // })
+            return res.status(404).json({message:"message lmit exceeded"})
         }
     }
     if(currentTime-prevTime2<300000){
-        throw new Error({
-            message:"only 2 api hits are allowed in 5 mins"
-        })
+        return res.status(404).json({message:"only 2 api hits are allowed per 5 mins"})
     }
     try {
         dob=new Date(dob);
-        console.log("dob is : ",dob);
+        // console.log("dob is : ",dob);
         const customer=await Customer.create({
             customer_name,dob,income
         })
@@ -54,35 +53,31 @@ const dbSave=async (req,res)=>{
         prevName=customer_name;
         res.status(200).json(customer);
     } catch (error) {
-        res.status(400).json({error:error.message})
+        return res.status(400).json({error:error.message})
     }
 }
 
 const dbTimeBased=async (req,res)=>{
     let {customer_name,dob,income}=req.body;
     let d = new Date();
-    if(d.getDay() === 1){
-        throw new Error({
-            message:"Please don't use this api on monday"
-        })
+    if(d.getDay() === 2){
+        return res.status(404).json({message:"Please don't use this api on monday"})
     }
     const currentTime=new Date();
     const Hour = currentTime.getHours();
     const Minute = currentTime.getMinutes();
     const totalMinutes=Hour*60+Minute;
     if(totalMinutes>8*60&&totalMinutes<15*60){
-        throw new Error({
-            message:"Please try after 3pm"
-        })
+        return res.status(404).json({message:"Please try after 3pm"})
     }
     try {
         dob=new Date(dob);
         const customer=await Customer.create({
             customer_name,dob,income
         })
-        res.status(200).json(customer);
+        return res.status(200).json(customer);
     } catch (error) {
-        res.status(400).json({error:error.message})
+        return res.status(400).json({error:error.message})
     }
 }
 
@@ -95,17 +90,16 @@ const dbSearch=async (req,res)=>{
         
         // console.log(minBirthDate,maxBirthDate);
         const customer_names = await Customer.find({
-            // dob:{$gte: minBirthDate,
-            //     $lte: maxBirthDate}
-        }).select("customer_name")
-        // console.log("customer names ",customer_names);
+            dob:{$gte: minBirthDate,$lte: maxBirthDate}
+        })
+        console.log("customer names ",customer_names);
         const endTime=performance.now();
-        res.status(200).json({
+        return res.status(200).json({
             response:customer_names,
             response_time:endTime-startTime
         })
     } catch (error) {
-        res.status(501).json({
+        return res.status(501).json({
             message:"Could not fetch data",
         })
     }
